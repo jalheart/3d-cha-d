@@ -13,6 +13,7 @@ var _inspector_panel: FbxInspectorPanel
 var _animation_panel: FbxAnimationEditorPanel
 var _file_dialog: FileDialog
 var _scene_export_dialog: FileDialog
+var _object_export_dialog: FbxObjectExportDialog
 var _export_success_dialog: AcceptDialog
 var _loaded_model: Node
 var _recent_files_menu: PopupMenu
@@ -55,6 +56,8 @@ func _create_runtime_ui() -> void:
 		Vector2(maxf(12.0, viewport_size.x - 704.0), 68.0),
 		Vector2(360.0, 420.0)
 	)
+	_object_export_dialog = FbxObjectExportDialog.new()
+	_object_export_dialog.setup(workspace, _fbx_exporter)
 
 	var menu_bar := MenuBar.new()
 	ui_layer.add_child(menu_bar)
@@ -66,6 +69,7 @@ func _create_runtime_ui() -> void:
 	file_menu.add_item("Load .fbx", 0)
 	file_menu.add_separator()
 	file_menu.add_item("Export Loaded Scene...", 2)
+	file_menu.add_item("Export Object...", 3)
 	file_menu.id_pressed.connect(_on_file_menu_item_pressed)
 	_recent_files_menu = PopupMenu.new()
 	_recent_files_menu.name = "RecentFilesMenu"
@@ -102,6 +106,8 @@ func _on_file_menu_item_pressed(id: int) -> void:
 		_file_dialog.popup_centered_ratio()
 	elif id == 2:
 		_open_scene_export_dialog()
+	elif id == 3:
+		_open_object_export_dialog()
 
 
 func _on_recent_file_menu_item_pressed(id: int) -> void:
@@ -137,6 +143,13 @@ func _open_scene_export_dialog() -> void:
 		filename = "model"
 	_scene_export_dialog.current_file = "%s.tscn" % filename
 	_scene_export_dialog.popup_centered_ratio()
+
+
+func _open_object_export_dialog() -> void:
+	if not is_instance_valid(_loaded_model):
+		_show_error("Load an FBX file before exporting an object.")
+		return
+	_object_export_dialog.open_for_model(_loaded_model)
 
 
 func _export_loaded_scene(path: String) -> void:
