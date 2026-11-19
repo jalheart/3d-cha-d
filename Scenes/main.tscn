@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://qp2ha185rktp"]
+
+[ext_resource type="Script" uid="uid://dk4mgqkf3xkbo" path="res://Scenes/main.gd" id="1_jjgbg"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_d5mrg"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_d5mrg"]
+
+[node name="Main" type="Node3D" unique_id=1306496975]
+script = ExtResource("1_jjgbg")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1602636266]
+transform = Transform3D(1, 0, 0, 0, 0.9905179, 0.13738374, 0, -0.13738374, 0.9905179, 0, 0.9406127, 2.1654546)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1484798206]
+transform = Transform3D(1, 0, 0, 0, 0.73136854, 0.68198246, 0, -0.68198246, 0.73136854, 0, 2.457531, 2.3357034)
+
+[node name="floor" type="MeshInstance3D" parent="." unique_id=223721943]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+mesh = SubResource("PlaneMesh_d5mrg")
+
+[node name="Character" type="Node3D" parent="." unique_id=115197976]
+
+[node name="Object" type="MeshInstance3D" parent="Character" unique_id=210165797]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0509712, 0)
+mesh = SubResource("CapsuleMesh_d5mrg")
