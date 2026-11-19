@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://qp2ha185rktp"]
 
 [ext_resource type="Script" uid="uid://dk4mgqkf3xkbo" path="res://Scenes/main.gd" id="1_jjgbg"]
-[ext_resource type="Script" path="res://Scripts/orbit_camera_controller.gd" id="2_camera"]
+[ext_resource type="Script" uid="uid://ctlwi5hddh61a" path="res://Scripts/orbit_camera_controller.gd" id="2_camera"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_d5mrg"]
 
@@ -26,3 +26,5 @@ mesh = SubResource("PlaneMesh_d5mrg")
 [node name="Object" type="MeshInstance3D" parent="Character" unique_id=210165797]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0509712, 0)
 mesh = SubResource("CapsuleMesh_d5mrg")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=760710538]

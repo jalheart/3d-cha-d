@@ -7,7 +7,7 @@
 - `Scripts/orbit_camera_controller.gd` owns camera orbit, pan, zoom, and target positioning. It is attached to `Camera3D`.
 - `Scripts/dockable_panel.gd` provides reusable drag, snap, and minimize behavior. `Scripts/fbx_inspector_panel.gd` presents model properties, and `Scripts/fbx_animation_editor_panel.gd` lists and edits animation clips.
 - `Scripts/fbx_scene_loader.gd` parses external FBX files at runtime with `FBXDocument.append_from_file()` and `generate_scene()`, reporting failures through a signal. Do not rely on `ResourceLoader` or the editor import cache for arbitrary external FBX paths.
-- Animation name and loop-mode edits and preview speed apply to the loaded model at runtime; they are not written back to the FBX.
+- Animation name and loop-mode edits and preview speed apply to the loaded model at runtime; they are not written back to the FBX. Export saves the selected clip's complete `AnimationLibrary` as `.res` or `.tres`.
 
 ## Build and validation
 
@@ -24,7 +24,7 @@ godot --headless --path . --quit-after 2
 godot --path .
 ```
 
-For the manual check, use **File > Load .fbx**, then select a clip to open its editor and test playback and settings. There is no project-defined test or lint runner.
+For the manual check, use **File > Load .fbx**, then select a clip to test playback, settings, and **Export Library** to `.res` and `.tres`. Load the exported resource as an `AnimationLibrary` to verify compatibility. There is no project-defined test or lint runner.
 
 ## Repository conventions
 
