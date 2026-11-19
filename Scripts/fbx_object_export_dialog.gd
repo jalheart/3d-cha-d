@@ -22,6 +22,7 @@ func setup(workspace: Control, exporter: FbxSceneExporter) -> void:
 	title = "Export Object"
 	size = Vector2i(760, 560)
 	min_size = Vector2i(620, 420)
+	close_requested.connect(hide)
 	workspace.add_child(self)
 
 	var margin := MarginContainer.new()
@@ -114,6 +115,13 @@ func setup(workspace: Control, exporter: FbxSceneExporter) -> void:
 	_success_dialog.title = "Object Exported"
 	workspace.add_child(_success_dialog)
 	hide()
+
+
+func apply_ui_theme(theme: Theme) -> void:
+	self.theme = theme
+	_file_dialog.theme = theme
+	_error_dialog.theme = theme
+	_success_dialog.theme = theme
 
 
 func open_for_model(model: Node) -> void:

@@ -113,6 +113,11 @@ func set_model(model: Node) -> int:
 	return _clips.size()
 
 
+func apply_ui_theme(theme: Theme) -> void:
+	_error_dialog.theme = theme
+	_export_dialog.apply_ui_theme(theme)
+
+
 func stop_playback() -> void:
 	if is_instance_valid(_active_player):
 		_active_player.stop()

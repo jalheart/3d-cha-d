@@ -124,6 +124,13 @@ func setup(workspace: Control) -> void:
 	hide()
 
 
+func apply_ui_theme(theme: Theme) -> void:
+	self.theme = theme
+	_file_dialog.theme = theme
+	_error_dialog.theme = theme
+	_success_dialog.theme = theme
+
+
 func open_for_library(library: AnimationLibrary) -> void:
 	_source_library = library
 	_pending_export_library = null

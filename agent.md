@@ -10,6 +10,7 @@
 - `Scripts/fbx_scene_exporter.gd` packs the loaded FBX root and its descendants into a reusable `PackedScene`, preserving nodes such as `Skeleton3D`. Export scenes as `.tscn` or `.scn`; temporarily assign scene ownership for packing and restore the live model's ownership afterward.
 - `Scripts/fbx_object_export_dialog.gd` exports a selected node subtree as its own `PackedScene`. It supports per-node and per-bone renaming plus case-sensitive bulk find/replace for bone names on the export copy, updates mesh skeleton paths and named skin binds, and leaves animation-track remapping to the Animation Library exporter.
 - `Scenes/main.gd` keeps up to ten successfully loaded FBX paths in a `Recent Files` submenu, persisted across launches in `user://recent_files.cfg`.
+- The top-level `File` and `View` menus use the default Godot theme. Add `PopupMenu` children directly to `MenuBar` and set their labels with `set_menu_title()`. `View > Text Size` applies extra small/small/default/large font sizes (12/14/16/18 px) to the UI and persists the selection in `user://ui_settings.cfg`.
 - Animation name and loop-mode edits and preview speed apply to the loaded model at runtime; they are not saved to the FBX. Export copies the selected clip's complete `AnimationLibrary` to `.res` or `.tres`, with editable library/animation names, per-track path remapping, bulk find/replace for target paths, and an optional track-root prefix. Export remapping must not modify the source library.
 
 ## SOLID design requirements
@@ -37,7 +38,7 @@ godot --headless --path . --quit-after 2
 godot --path .
 ```
 
-For the manual check, use **File > Load .fbx**, then use **File > Export Loaded Scene** to save `.tscn` and `.scn` files. Reload the exported `PackedScene` and verify the imported hierarchy, including `Skeleton3D`, is present. Use **File > Export Object** to select a subtree, bulk-replace bone names, rename its nodes, and verify any skinned mesh still points to the renamed skeleton. Select a clip to test playback, settings, and **Export Library**; verify that animation export can remap paths and save `.res` and `.tres` `AnimationLibrary` resources without changing the source.
+For the manual check, use **View > Text Size** to change the font size and verify the choice persists after restart. Use **File > Load .fbx**, then **File > Export Loaded Scene** to save `.tscn` and `.scn` files. Reload the exported `PackedScene` and verify the imported hierarchy, including `Skeleton3D`, is present. Use **File > Export Object** to select a subtree, bulk-replace bone names, rename its nodes, and verify any skinned mesh still points to the renamed skeleton. Select a clip to test playback, settings, and **Export Library**; verify that animation export can remap paths and save `.res` and `.tres` `AnimationLibrary` resources without changing the source.
 
 ## Repository conventions
 
