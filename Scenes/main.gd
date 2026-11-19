@@ -8,9 +8,13 @@ const RECENT_FILE_ITEM_ID_BASE := 100
 @onready var character: Node3D = $Character
 
 var _fbx_loader: FbxSceneLoader
+var _fbx_exporter: FbxSceneExporter
 var _inspector_panel: FbxInspectorPanel
 var _animation_panel: FbxAnimationEditorPanel
 var _file_dialog: FileDialog
+var _scene_export_dialog: FileDialog
+var _export_success_dialog: AcceptDialog
+var _loaded_model: Node
 var _recent_files_menu: PopupMenu
 var _recent_files: Array[String] = []
 var _recent_file_paths_by_id: Dictionary = {}
@@ -19,7 +23,9 @@ var _error_dialog: AcceptDialog
 
 func _ready() -> void:
 	_fbx_loader = FbxSceneLoader.new()
-	_fbx_loader.load_failed.connect(_show_load_error)
+	_fbx_loader.load_failed.connect(_show_error)
+	_fbx_exporter = FbxSceneExporter.new()
+	_fbx_exporter.export_failed.connect(_show_error)
 	_create_runtime_ui()
 	_load_recent_files()
 	camera.initialize_target(character.global_position + Vector3(0.0, 0.1, 0.0))
@@ -58,6 +64,8 @@ func _create_runtime_ui() -> void:
 
 	var file_menu := file_menu_button.get_popup()
 	file_menu.add_item("Load .fbx", 0)
+	file_menu.add_separator()
+	file_menu.add_item("Export Loaded Scene...", 2)
 	file_menu.id_pressed.connect(_on_file_menu_item_pressed)
 	_recent_files_menu = PopupMenu.new()
 	_recent_files_menu.name = "RecentFilesMenu"
@@ -74,13 +82,26 @@ func _create_runtime_ui() -> void:
 	_file_dialog.file_selected.connect(_load_fbx)
 	add_child(_file_dialog)
 
+	_scene_export_dialog = FileDialog.new()
+	_scene_export_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	_scene_export_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	_scene_export_dialog.add_filter("*.tscn ; Text Scene")
+	_scene_export_dialog.add_filter("*.scn ; Binary Scene")
+	_scene_export_dialog.file_selected.connect(_export_loaded_scene)
+	add_child(_scene_export_dialog)
+
 	_error_dialog = AcceptDialog.new()
 	add_child(_error_dialog)
+	_export_success_dialog = AcceptDialog.new()
+	_export_success_dialog.title = "Scene Exported"
+	add_child(_export_success_dialog)
 
 
 func _on_file_menu_item_pressed(id: int) -> void:
 	if id == 0:
 		_file_dialog.popup_centered_ratio()
+	elif id == 2:
+		_open_scene_export_dialog()
 
 
 func _on_recent_file_menu_item_pressed(id: int) -> void:
@@ -103,7 +124,39 @@ func _load_fbx(path: String) -> void:
 	var animation_count := _animation_panel.set_model(model)
 	_inspector_panel.inspect_model(model, path, animation_count)
 	camera.set_target(character.global_position + Vector3(0.0, 0.1, 0.0))
+	_loaded_model = model
 	_remember_recent_file(path)
+
+
+func _open_scene_export_dialog() -> void:
+	if not is_instance_valid(_loaded_model):
+		_show_error("Load an FBX file before exporting its scene.")
+		return
+	var filename := String(_loaded_model.name).validate_filename()
+	if filename.is_empty():
+		filename = "model"
+	_scene_export_dialog.current_file = "%s.tscn" % filename
+	_scene_export_dialog.popup_centered_ratio()
+
+
+func _export_loaded_scene(path: String) -> void:
+	if not is_instance_valid(_loaded_model):
+		_show_error("Load an FBX file before exporting its scene.")
+		return
+
+	var extension := path.get_extension().to_lower()
+	if extension.is_empty():
+		path += ".tscn"
+		extension = "tscn"
+	if extension != "tscn" and extension != "scn":
+		_show_error("Choose a .tscn or .scn file extension.")
+		return
+	if path.get_extension() != extension:
+		path = "%s.%s" % [path.get_basename(), extension]
+
+	if _fbx_exporter.save_scene(_loaded_model, path):
+		_export_success_dialog.dialog_text = "Exported the loaded model scene to:\n%s" % path
+		_export_success_dialog.popup_centered()
 
 
 func _load_recent_files() -> void:
@@ -113,12 +166,12 @@ func _load_recent_files() -> void:
 		_refresh_recent_files_menu()
 		return
 	if error != OK:
-		_show_load_error("Could not load recent files: %s" % error_string(error))
+		_show_error("Could not load recent files: %s" % error_string(error))
 		return
 
 	var stored_paths: Variant = config.get_value("recent_files", "paths", [])
 	if not stored_paths is Array:
-		_show_load_error("The saved recent files list is invalid.")
+		_show_error("The saved recent files list is invalid.")
 		return
 
 	for stored_path in stored_paths:
@@ -143,7 +196,7 @@ func _remember_recent_file(path: String) -> void:
 	config.set_value("recent_files", "paths", _recent_files)
 	var error := config.save(RECENT_FILES_CONFIG_PATH)
 	if error != OK:
-		_show_load_error("Could not save recent files: %s" % error_string(error))
+		_show_error("Could not save recent files: %s" % error_string(error))
 
 
 func _refresh_recent_files_menu() -> void:
@@ -162,6 +215,6 @@ func _refresh_recent_files_menu() -> void:
 		_recent_file_paths_by_id[item_id] = path
 
 
-func _show_load_error(message: String) -> void:
+func _show_error(message: String) -> void:
 	_error_dialog.dialog_text = message
 	_error_dialog.popup_centered()
