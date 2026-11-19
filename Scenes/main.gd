@@ -32,6 +32,7 @@ func _create_runtime_ui() -> void:
 
 	var workspace := Control.new()
 	workspace.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	workspace.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_layer.add_child(workspace)
 
 	var viewport_size := get_viewport().get_visible_rect().size
