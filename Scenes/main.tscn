@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://qp2ha185rktp"]
 
 [ext_resource type="Script" uid="uid://dk4mgqkf3xkbo" path="res://Scenes/main.gd" id="1_jjgbg"]
+[ext_resource type="Script" path="res://Scripts/orbit_camera_controller.gd" id="2_camera"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_d5mrg"]
 
@@ -11,6 +12,7 @@ script = ExtResource("1_jjgbg")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1602636266]
 transform = Transform3D(1, 0, 0, 0, 0.9905179, 0.13738374, 0, -0.13738374, 0.9905179, 0, 0.9406127, 2.1654546)
+script = ExtResource("2_camera")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1484798206]
 transform = Transform3D(1, 0, 0, 0, 0.73136854, 0.68198246, 0, -0.68198246, 0.73136854, 0, 2.457531, 2.3357034)
