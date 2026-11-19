@@ -1,0 +1,9 @@
+[gd_resource type="AnimationLibrary" format=3 uid="uid://dcdu1pinjqq3v"]
+
+[ext_resource type="Animation" uid="uid://bh14b0jc8vgun" path="res://assets/models/object.res" id="1_nf2eo"]
+
+[resource]
+resource_name = "Animations"
+_data = {
+&"object": ExtResource("1_nf2eo")
+}

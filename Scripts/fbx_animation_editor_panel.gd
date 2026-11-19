@@ -7,8 +7,7 @@ var _loop_selector: OptionButton
 var _speed_spin_box: SpinBox
 var _details_label: Label
 var _error_dialog: AcceptDialog
-var _export_dialog: FileDialog
-var _export_success_dialog: AcceptDialog
+var _export_dialog: AnimationLibraryExportDialog
 var _clips: Array[Dictionary] = []
 var _selected_index := -1
 var _active_player: AnimationPlayer
@@ -71,7 +70,7 @@ func setup(workspace: Control, panel_position: Vector2, panel_size: Vector2) -> 
 	content_container.add_child(buttons)
 	var export_button := Button.new()
 	export_button.text = "Export Library"
-	export_button.tooltip_text = "Export the selected clip's AnimationLibrary as .res or .tres"
+	export_button.tooltip_text = "Export and remap the selected clip's AnimationLibrary"
 	export_button.pressed.connect(_open_export_dialog)
 	buttons.add_child(export_button)
 	var apply_button := Button.new()
@@ -90,17 +89,8 @@ func setup(workspace: Control, panel_position: Vector2, panel_size: Vector2) -> 
 	_error_dialog = AcceptDialog.new()
 	workspace.add_child(_error_dialog)
 
-	_export_dialog = FileDialog.new()
-	_export_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	_export_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	_export_dialog.add_filter("*.tres ; Text Resource")
-	_export_dialog.add_filter("*.res ; Binary Resource")
-	_export_dialog.file_selected.connect(_export_selected_animation)
-	workspace.add_child(_export_dialog)
-
-	_export_success_dialog = AcceptDialog.new()
-	_export_success_dialog.title = "Animation Library Exported"
-	workspace.add_child(_export_success_dialog)
+	_export_dialog = AnimationLibraryExportDialog.new()
+	_export_dialog.setup(workspace)
 	hide()
 
 
@@ -222,56 +212,14 @@ func _apply_settings() -> bool:
 func _open_export_dialog() -> void:
 	if _selected_index < 0 or _selected_index >= _clips.size():
 		return
-	var clip: Dictionary = _clips[_selected_index]
-	var library := clip["library"] as AnimationLibrary
-	if library == null:
-		_show_error("The animation library is no longer available.")
-		return
-	var filename := library.resource_name
-	if filename.is_empty():
-		filename = String(clip["library_name"])
-	if filename.is_empty():
-		filename = "%s_animations" % (clip["player"] as AnimationPlayer).name
-	filename = filename.validate_filename()
-	if filename.is_empty():
-		filename = "animations"
-	_export_dialog.current_file = "%s.tres" % filename
-	_export_dialog.popup_centered_ratio()
-
-
-func _export_selected_animation(path: String) -> void:
 	if not _apply_settings():
 		return
-
-	var extension := path.get_extension().to_lower()
-	if extension.is_empty():
-		path += ".tres"
-		extension = "tres"
-	if extension != "res" and extension != "tres":
-		_show_error("Choose a .res or .tres file extension.")
-		return
-	if path.get_extension() != extension:
-		path = "%s.%s" % [path.get_basename(), extension]
-
 	var clip: Dictionary = _clips[_selected_index]
 	var library := clip["library"] as AnimationLibrary
 	if library == null:
 		_show_error("The animation library is no longer available.")
 		return
-
-	var error := ResourceSaver.save(library, path)
-	if error != OK:
-		_show_error("Could not export the animation library to '%s': %s" % [
-			path,
-			error_string(error)
-		])
-		return
-
-	_export_success_dialog.dialog_text = "Exported %d animations to:\n%s" % [
-		library.get_animation_list().size(),
-		path
-	]
-	_export_success_dialog.popup_centered()
+	_export_dialog.open_for_library(library)
 
 
 func _play_selected() -> void:

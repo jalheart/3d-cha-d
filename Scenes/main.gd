@@ -17,6 +17,7 @@ func _ready() -> void:
 	camera.initialize_target(character.global_position + Vector3(0.0, 0.1, 0.0))
 
 
+
 func _create_runtime_ui() -> void:
 	var ui_layer := CanvasLayer.new()
 	add_child(ui_layer)
