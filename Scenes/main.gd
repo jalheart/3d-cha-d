@@ -16,8 +16,7 @@ var _fbx_loader: FbxSceneLoader
 var _fbx_exporter: FbxSceneExporter
 var _inspector_panel: FbxInspectorPanel
 var _animation_panel: FbxAnimationEditorPanel
-var _sidebar: DockablePanel
-var _sidebar_tabs: TabContainer
+var _sidebar_docks: Dictionary = {}
 var _file_dialog: FileDialog
 var _scene_export_dialog: FileDialog
 var _object_export_dialog: FbxObjectExportDialog
@@ -60,24 +59,27 @@ func _create_runtime_ui() -> void:
 	_ui_root.add_child(workspace)
 
 	var viewport_size := get_viewport().get_visible_rect().size
-	_sidebar = DockablePanel.new()
-	_sidebar.configure(
-		"FBX Explorer",
-		workspace,
-		Vector2(12.0, 52.0),
-		Vector2(360.0, maxf(240.0, viewport_size.y - 64.0))
-	)
-	_sidebar_tabs = TabContainer.new()
-	_sidebar_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_sidebar_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_sidebar.content_container.add_child(_sidebar_tabs)
+	for location in [
+		SidebarPanel.Location.LEFT_SIDEBAR,
+		SidebarPanel.Location.RIGHT_SIDEBAR,
+		SidebarPanel.Location.BOTTOM_PANEL
+	]:
+		_create_sidebar_dock(workspace, location, viewport_size)
 
 	_inspector_panel = FbxInspectorPanel.new()
-	_inspector_panel.setup(_sidebar_tabs)
+	_inspector_panel.setup()
+	_sidebar_docks[SidebarPanel.Location.LEFT_SIDEBAR].add_child(_inspector_panel)
+	_inspector_panel.location_changed.connect(
+		_on_sidebar_panel_location_changed.bind(_inspector_panel)
+	)
 
 	_animation_panel = FbxAnimationEditorPanel.new()
-	_animation_panel.setup(_sidebar_tabs, workspace)
-	_sidebar_tabs.set_tab_disabled(1, true)
+	_animation_panel.setup(workspace)
+	_sidebar_docks[SidebarPanel.Location.LEFT_SIDEBAR].add_child(_animation_panel)
+	_animation_panel.location_changed.connect(
+		_on_sidebar_panel_location_changed.bind(_animation_panel)
+	)
+	_refresh_sidebar_docks()
 	_object_export_dialog = FbxObjectExportDialog.new()
 	_object_export_dialog.setup(workspace, _fbx_exporter)
 
@@ -145,6 +147,80 @@ func _create_runtime_ui() -> void:
 	add_child(_export_success_dialog)
 
 
+func _create_sidebar_dock(
+	workspace: Control,
+	location: int,
+	viewport_size: Vector2
+) -> void:
+	var dock := VBoxContainer.new()
+	dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	match location:
+		SidebarPanel.Location.LEFT_SIDEBAR:
+			dock.anchor_left = 0.0
+			dock.anchor_right = 0.0
+			dock.anchor_top = 0.0
+			dock.anchor_bottom = 1.0
+			dock.offset_left = 0.0
+			dock.offset_right = 360.0
+			dock.offset_top = 40.0
+			dock.offset_bottom = 0.0
+		SidebarPanel.Location.RIGHT_SIDEBAR:
+			dock.anchor_left = 1.0
+			dock.anchor_right = 1.0
+			dock.anchor_top = 0.0
+			dock.anchor_bottom = 1.0
+			dock.offset_left = -360.0
+			dock.offset_right = 0.0
+			dock.offset_top = 40.0
+			dock.offset_bottom = 0.0
+		SidebarPanel.Location.BOTTOM_PANEL:
+			var bottom_height := minf(400.0, maxf(260.0, viewport_size.y * 0.55))
+			dock.anchor_left = 0.0
+			dock.anchor_right = 1.0
+			dock.anchor_top = 1.0
+			dock.anchor_bottom = 1.0
+			dock.offset_left = 0.0
+			dock.offset_right = 0.0
+			dock.offset_top = -bottom_height
+			dock.offset_bottom = 0.0
+	workspace.add_child(dock)
+	_sidebar_docks[location] = dock
+
+
+func _on_sidebar_panel_location_changed(location: int, panel: SidebarPanel) -> void:
+	_move_sidebar_panel(panel, location, true)
+
+
+func _move_sidebar_panel(panel: SidebarPanel, location: int, save: bool) -> void:
+	if not [SidebarPanel.Location.LEFT_SIDEBAR, SidebarPanel.Location.RIGHT_SIDEBAR, SidebarPanel.Location.BOTTOM_PANEL].has(location):
+		_show_error("Choose a supported panel location.")
+		return
+	var destination := _sidebar_docks.get(location) as VBoxContainer
+	if destination == null:
+		_show_error("The selected panel location is unavailable.")
+		return
+	var current_parent := panel.get_parent()
+	if current_parent != destination:
+		if current_parent != null:
+			current_parent.remove_child(panel)
+		destination.add_child(panel)
+	panel.set_location(location)
+	_refresh_sidebar_docks()
+	if save:
+		_save_ui_settings()
+
+
+func _refresh_sidebar_docks() -> void:
+	for location in _sidebar_docks:
+		var dock := _sidebar_docks[location] as VBoxContainer
+		var has_visible_panel := false
+		for child in dock.get_children():
+			if child is SidebarPanel and child.visible:
+				has_visible_panel = true
+				break
+		dock.visible = has_visible_panel
+
+
 func _on_file_menu_item_pressed(id: int) -> void:
 	if id == 0:
 		_file_dialog.popup_centered_ratio()
@@ -183,8 +259,7 @@ func _load_fbx(path: String) -> void:
 
 	var animation_count := _animation_panel.set_model(model)
 	_inspector_panel.inspect_model(model, path, animation_count)
-	_sidebar_tabs.set_tab_disabled(1, animation_count == 0)
-	_sidebar_tabs.current_tab = 1 if animation_count > 0 else 0
+	_refresh_sidebar_docks()
 	camera.set_target(character.global_position + Vector3(0.0, 0.1, 0.0))
 	_loaded_model = model
 	_remember_recent_file(path)
@@ -272,11 +347,33 @@ func _load_ui_settings() -> void:
 		return
 	_ui_font_size = stored_font_size
 	_update_text_size_menu()
+	_load_panel_location(
+		_inspector_panel,
+		config.get_value("ui", "inspector_location", SidebarPanel.Location.LEFT_SIDEBAR),
+		"FBX Inspector"
+	)
+	_load_panel_location(
+		_animation_panel,
+		config.get_value("ui", "animation_location", SidebarPanel.Location.LEFT_SIDEBAR),
+		"Animation Editor"
+	)
+
+
+func _load_panel_location(panel: SidebarPanel, stored_location: Variant, panel_title: String) -> void:
+	if not stored_location is int:
+		_show_error("The saved location for %s is invalid." % panel_title)
+		return
+	if not [SidebarPanel.Location.LEFT_SIDEBAR, SidebarPanel.Location.RIGHT_SIDEBAR, SidebarPanel.Location.BOTTOM_PANEL].has(stored_location):
+		_show_error("The saved location for %s is not supported." % panel_title)
+		return
+	_move_sidebar_panel(panel, stored_location, false)
 
 
 func _save_ui_settings() -> void:
 	var config := ConfigFile.new()
 	config.set_value("ui", "font_size", _ui_font_size)
+	config.set_value("ui", "inspector_location", _inspector_panel.location)
+	config.set_value("ui", "animation_location", _animation_panel.location)
 	var error := config.save(UI_SETTINGS_CONFIG_PATH)
 	if error != OK:
 		_show_error("Could not save UI settings: %s" % error_string(error))

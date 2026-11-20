@@ -1,12 +1,11 @@
 class_name FbxInspectorPanel
-extends Control
+extends SidebarPanel
 
 var _tree: Tree
 
 
-func setup(parent: TabContainer) -> void:
-	name = "FBX Inspector"
-	parent.add_child(self)
+func setup() -> void:
+	configure("FBX Inspector", "ⓘ")
 	_tree = Tree.new()
 	_tree.columns = 2
 	_tree.column_titles_visible = false
@@ -14,8 +13,7 @@ func setup(parent: TabContainer) -> void:
 	_tree.set_column_custom_minimum_width(0, 100)
 	_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_tree.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_tree)
+	content_container.add_child(_tree)
 	show_empty()
 
 

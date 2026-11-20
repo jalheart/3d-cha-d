@@ -1,5 +1,5 @@
 class_name FbxAnimationEditorPanel
-extends Control
+extends SidebarPanel
 
 var _animation_list: ItemList
 var _name_edit: LineEdit
@@ -11,28 +11,23 @@ var _export_dialog: AnimationLibraryExportDialog
 var _clips: Array[Dictionary] = []
 var _selected_index := -1
 var _active_player: AnimationPlayer
-var _content_container: VBoxContainer
 
 
-func setup(parent: TabContainer, workspace: Control) -> void:
-	name = "Animation Editor"
-	parent.add_child(self)
-	_content_container = VBoxContainer.new()
-	_content_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_content_container)
+func setup(workspace: Control) -> void:
+	configure("Animation Editor", "▶")
 
 	var note := Label.new()
 	note.text = "Changes apply to the currently loaded model."
-	_content_container.add_child(note)
+	content_container.add_child(note)
 
 	_animation_list = ItemList.new()
 	_animation_list.custom_minimum_size.y = 140.0
 	_animation_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_animation_list.item_selected.connect(_on_animation_selected)
-	_content_container.add_child(_animation_list)
+	content_container.add_child(_animation_list)
 
 	var name_row := HBoxContainer.new()
-	_content_container.add_child(name_row)
+	content_container.add_child(name_row)
 	var name_label := Label.new()
 	name_label.text = "Name"
 	name_label.custom_minimum_size.x = 80.0
@@ -42,7 +37,7 @@ func setup(parent: TabContainer, workspace: Control) -> void:
 	name_row.add_child(_name_edit)
 
 	var loop_row := HBoxContainer.new()
-	_content_container.add_child(loop_row)
+	content_container.add_child(loop_row)
 	var loop_label := Label.new()
 	loop_label.text = "Loop mode"
 	loop_label.custom_minimum_size.x = 80.0
@@ -55,7 +50,7 @@ func setup(parent: TabContainer, workspace: Control) -> void:
 	loop_row.add_child(_loop_selector)
 
 	var speed_row := HBoxContainer.new()
-	_content_container.add_child(speed_row)
+	content_container.add_child(speed_row)
 	var speed_label := Label.new()
 	speed_label.text = "Play speed"
 	speed_label.custom_minimum_size.x = 80.0
@@ -69,10 +64,10 @@ func setup(parent: TabContainer, workspace: Control) -> void:
 	speed_row.add_child(_speed_spin_box)
 
 	_details_label = Label.new()
-	_content_container.add_child(_details_label)
+	content_container.add_child(_details_label)
 
 	var buttons := HBoxContainer.new()
-	_content_container.add_child(buttons)
+	content_container.add_child(buttons)
 	var export_button := Button.new()
 	export_button.text = "Export Library"
 	export_button.tooltip_text = "Export and remap the selected clip's AnimationLibrary"
@@ -107,12 +102,14 @@ func set_model(model: Node) -> int:
 	_collect_animations(model)
 
 	if _clips.is_empty():
+		hide()
 		return 0
 
 	for clip in _clips:
 		_animation_list.add_item(_get_clip_display_name(clip))
 	_animation_list.select(0)
 	_load_settings(0)
+	show()
 	return _clips.size()
 
 
