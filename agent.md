@@ -48,3 +48,4 @@ For the manual check, use **View > Text Size** to change the font size and verif
 - Use Godot 4 APIs and typed GDScript. Source files use UTF-8 and tab indentation.
 - Report load and parse failures with `push_error()` and the existing `AcceptDialog` pattern instead of silently ignoring them.
 - `.godot/` contains generated editor/import data and is ignored by `.gitignore`; do not treat it as source assets.
+- Update `README.md` with every change. Any new, changed, or removed feature, menu entry, script, scene, requirement, build step, or usage detail must be reflected in `README.md` in the same change, and the **Project architecture** notes above must be kept accurate too.
