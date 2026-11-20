@@ -1,11 +1,12 @@
 class_name FbxInspectorPanel
-extends DockablePanel
+extends Control
 
 var _tree: Tree
 
 
-func setup(workspace: Control, panel_position: Vector2, panel_size: Vector2) -> void:
-	configure("FBX Inspector", workspace, panel_position, panel_size)
+func setup(parent: TabContainer) -> void:
+	name = "FBX Inspector"
+	parent.add_child(self)
 	_tree = Tree.new()
 	_tree.columns = 2
 	_tree.column_titles_visible = false
@@ -13,7 +14,8 @@ func setup(workspace: Control, panel_position: Vector2, panel_size: Vector2) -> 
 	_tree.set_column_custom_minimum_width(0, 100)
 	_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content_container.add_child(_tree)
+	_tree.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_tree)
 	show_empty()
 
 

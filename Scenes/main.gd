@@ -16,6 +16,8 @@ var _fbx_loader: FbxSceneLoader
 var _fbx_exporter: FbxSceneExporter
 var _inspector_panel: FbxInspectorPanel
 var _animation_panel: FbxAnimationEditorPanel
+var _sidebar: DockablePanel
+var _sidebar_tabs: TabContainer
 var _file_dialog: FileDialog
 var _scene_export_dialog: FileDialog
 var _object_export_dialog: FbxObjectExportDialog
@@ -58,19 +60,24 @@ func _create_runtime_ui() -> void:
 	_ui_root.add_child(workspace)
 
 	var viewport_size := get_viewport().get_visible_rect().size
-	_inspector_panel = FbxInspectorPanel.new()
-	_inspector_panel.setup(
+	_sidebar = DockablePanel.new()
+	_sidebar.configure(
+		"FBX Explorer",
 		workspace,
-		Vector2(maxf(12.0, viewport_size.x - 332.0), 52.0),
-		Vector2(320.0, maxf(240.0, viewport_size.y - 64.0))
+		Vector2(12.0, 52.0),
+		Vector2(360.0, maxf(240.0, viewport_size.y - 64.0))
 	)
+	_sidebar_tabs = TabContainer.new()
+	_sidebar_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sidebar_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_sidebar.content_container.add_child(_sidebar_tabs)
+
+	_inspector_panel = FbxInspectorPanel.new()
+	_inspector_panel.setup(_sidebar_tabs)
 
 	_animation_panel = FbxAnimationEditorPanel.new()
-	_animation_panel.setup(
-		workspace,
-		Vector2(maxf(12.0, viewport_size.x - 704.0), 68.0),
-		Vector2(360.0, 420.0)
-	)
+	_animation_panel.setup(_sidebar_tabs, workspace)
+	_sidebar_tabs.set_tab_disabled(1, true)
 	_object_export_dialog = FbxObjectExportDialog.new()
 	_object_export_dialog.setup(workspace, _fbx_exporter)
 
@@ -176,6 +183,8 @@ func _load_fbx(path: String) -> void:
 
 	var animation_count := _animation_panel.set_model(model)
 	_inspector_panel.inspect_model(model, path, animation_count)
+	_sidebar_tabs.set_tab_disabled(1, animation_count == 0)
+	_sidebar_tabs.current_tab = 1 if animation_count > 0 else 0
 	camera.set_target(character.global_position + Vector3(0.0, 0.1, 0.0))
 	_loaded_model = model
 	_remember_recent_file(path)
