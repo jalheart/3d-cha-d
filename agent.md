@@ -40,6 +40,8 @@ godot --headless --path . --quit-after 2
 godot --path .
 ```
 
+Web testing is manual: the developer verifies the browser build personally. Do not run browser or Web-export tests yourself (no headless browser automation, no serving the build, no Playwright-style checks); limit automated validation to the Godot headless commands above.
+
 For the manual check, use **View > Text Size** to change the font size and verify the choice persists after restart. Use **File > Load .fbx**, then **File > Export Loaded Scene** to save `.tscn` and `.scn` files. Reload the exported `PackedScene` and verify the imported hierarchy, including `Skeleton3D`, is present. Use **File > Export Object** to select a subtree, choose the scene or binary `.res` format, bulk-replace bone names, rename its nodes, and verify any skinned mesh still points to the renamed skeleton. Select a clip to test playback, settings, and **Export Library**; verify that animation export can remap paths and save `.res` and `.tres` `AnimationLibrary` resources without changing the source. For Web, export with the **Web** preset, serve the build with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`, then verify loading through the browser file picker and that exports download instead of opening a save dialog.
 
 ## Repository conventions
