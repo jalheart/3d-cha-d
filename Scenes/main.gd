@@ -18,6 +18,7 @@ var _inspector_panel: FbxInspectorPanel
 var _animation_panel: FbxAnimationEditorPanel
 var _sidebar_docks: Dictionary = {}
 var _file_dialog: FileDialog
+var _web_file_picker: WebFilePicker
 var _scene_export_dialog: FileDialog
 var _object_export_dialog: FbxObjectExportDialog
 var _export_success_dialog: AcceptDialog
@@ -132,6 +133,10 @@ func _create_runtime_ui() -> void:
 	_file_dialog.file_selected.connect(_load_fbx)
 	add_child(_file_dialog)
 
+	_web_file_picker = WebFilePicker.new()
+	_web_file_picker.file_picked.connect(_on_web_file_picked)
+	_web_file_picker.picker_failed.connect(_show_error)
+
 	_scene_export_dialog = FileDialog.new()
 	_scene_export_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	_scene_export_dialog.access = FileDialog.ACCESS_FILESYSTEM
@@ -223,7 +228,10 @@ func _refresh_sidebar_docks() -> void:
 
 func _on_file_menu_item_pressed(id: int) -> void:
 	if id == 0:
-		_file_dialog.popup_centered_ratio()
+		if OS.has_feature("web"):
+			_web_file_picker.open(".fbx,.FBX")
+		else:
+			_file_dialog.popup_centered_ratio()
 	elif id == 2:
 		_open_scene_export_dialog()
 	elif id == 3:
@@ -246,11 +254,21 @@ func _on_recent_file_menu_item_pressed(id: int) -> void:
 		_load_fbx(path)
 
 
+func _on_web_file_picked(file_name: String, bytes: PackedByteArray) -> void:
+	var model := _fbx_loader.load_scene_from_bytes(bytes, file_name)
+	if model == null:
+		return
+	_install_model(model, file_name)
+
+
 func _load_fbx(path: String) -> void:
 	var model := _fbx_loader.load_scene(path)
 	if model == null:
 		return
+	_install_model(model, path)
 
+
+func _install_model(model: Node, source: String) -> void:
 	_animation_panel.stop_playback()
 	for child in character.get_children():
 		character.remove_child(child)
@@ -258,11 +276,11 @@ func _load_fbx(path: String) -> void:
 	character.add_child(model)
 
 	var animation_count := _animation_panel.set_model(model)
-	_inspector_panel.inspect_model(model, path, animation_count)
+	_inspector_panel.inspect_model(model, source, animation_count)
 	_refresh_sidebar_docks()
 	camera.set_target(character.global_position + Vector3(0.0, 0.1, 0.0))
 	_loaded_model = model
-	_remember_recent_file(path)
+	_remember_recent_file(source)
 
 
 func _open_scene_export_dialog() -> void:
@@ -272,6 +290,9 @@ func _open_scene_export_dialog() -> void:
 	var filename := String(_loaded_model.name).validate_filename()
 	if filename.is_empty():
 		filename = "model"
+	if OS.has_feature("web"):
+		_export_scene_direct("%s.tscn" % filename)
+		return
 	_scene_export_dialog.current_file = "%s.tscn" % filename
 	_scene_export_dialog.popup_centered_ratio()
 
@@ -298,12 +319,21 @@ func _export_loaded_scene(path: String) -> void:
 	if path.get_extension() != extension:
 		path = "%s.%s" % [path.get_basename(), extension]
 
+	_export_scene_direct(path)
+
+
+func _export_scene_direct(path: String) -> void:
 	if _fbx_exporter.save_scene(_loaded_model, path):
-		_export_success_dialog.dialog_text = "Exported the loaded model scene to:\n%s" % path
+		_export_success_dialog.dialog_text = "Exported the loaded model scene to:\n%s" % (
+			ResourceFileSaver.describe_saved_path(path)
+		)
 		_export_success_dialog.popup_centered()
 
 
 func _load_recent_files() -> void:
+	if OS.has_feature("web"):
+		_refresh_recent_files_menu()
+		return
 	var config := ConfigFile.new()
 	var error := config.load(RECENT_FILES_CONFIG_PATH)
 	if error == ERR_FILE_NOT_FOUND:
@@ -415,6 +445,8 @@ func _update_text_size_menu() -> void:
 
 
 func _remember_recent_file(path: String) -> void:
+	if OS.has_feature("web"):
+		return
 	_recent_files.erase(path)
 	_recent_files.push_front(path)
 	if _recent_files.size() > MAX_RECENT_FILES:
@@ -431,6 +463,10 @@ func _remember_recent_file(path: String) -> void:
 func _refresh_recent_files_menu() -> void:
 	_recent_files_menu.clear()
 	_recent_file_paths_by_id.clear()
+	if OS.has_feature("web"):
+		_recent_files_menu.add_item("Unavailable in the browser", 0)
+		_recent_files_menu.set_item_disabled(0, true)
+		return
 	if _recent_files.is_empty():
 		_recent_files_menu.add_item("No recent files", 0)
 		_recent_files_menu.set_item_disabled(0, true)

@@ -349,6 +349,9 @@ func _open_file_dialog() -> void:
 	var filename := String(_selected_root.name).validate_filename()
 	if filename.is_empty():
 		filename = "object"
+	if OS.has_feature("web"):
+		_save_export("%s.tscn" % filename)
+		return
 	_file_dialog.current_file = "%s.tscn" % filename
 	_file_dialog.popup_centered_ratio()
 
@@ -379,7 +382,7 @@ func _save_export(path: String) -> void:
 	):
 		_success_dialog.dialog_text = "Exported object '%s' to:\n%s" % [
 			_selected_root.name,
-			path
+			ResourceFileSaver.describe_saved_path(path)
 		]
 		_success_dialog.popup_centered()
 

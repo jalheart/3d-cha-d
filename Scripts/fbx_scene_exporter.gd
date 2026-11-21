@@ -61,7 +61,7 @@ func _pack_node(root: Node, description: String) -> PackedScene:
 
 
 func _save_packed_scene(packed_scene: PackedScene, path: String) -> bool:
-	var save_error := ResourceSaver.save(
+	var save_error := ResourceFileSaver.save(
 		packed_scene,
 		path,
 		ResourceSaver.FLAG_BUNDLE_RESOURCES

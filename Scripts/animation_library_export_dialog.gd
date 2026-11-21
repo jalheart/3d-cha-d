@@ -225,6 +225,9 @@ func _open_file_dialog() -> void:
 	var filename := _library_name_edit.text.strip_edges().validate_filename()
 	if filename.is_empty():
 		filename = "Animations"
+	if OS.has_feature("web"):
+		_save_export("%s.tres" % filename)
+		return
 	_file_dialog.current_file = "%s.tres" % filename
 	_file_dialog.popup_centered_ratio()
 
@@ -335,7 +338,7 @@ func _save_export(path: String) -> void:
 	if path.get_extension() != extension:
 		path = "%s.%s" % [path.get_basename(), extension]
 
-	var error := ResourceSaver.save(_pending_export_library, path)
+	var error := ResourceFileSaver.save(_pending_export_library, path)
 	if error != OK:
 		_show_error("Could not export the animation library to '%s': %s" % [
 			path,
@@ -345,7 +348,7 @@ func _save_export(path: String) -> void:
 
 	_success_dialog.dialog_text = "Exported %d animations to:\n%s" % [
 		_pending_export_library.get_animation_list().size(),
-		path
+		ResourceFileSaver.describe_saved_path(path)
 	]
 	_success_dialog.popup_centered()
 

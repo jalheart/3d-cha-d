@@ -11,7 +11,7 @@
 script = ExtResource("1_jjgbg")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1602636266]
-transform = Transform3D(1, 0, 0, 0, 0.9905179, 0.13738374, 0, -0.13738374, 0.9905179, 0, 0.9406127, 2.1654546)
+transform = Transform3D(1, 0, 0, 0, 0.9905179, 0.13738374, 0, -0.13738374, 0.9905179, 0, 0.9406127, 3.391959)
 script = ExtResource("2_camera")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1484798206]
