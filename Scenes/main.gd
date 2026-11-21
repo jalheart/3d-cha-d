@@ -25,6 +25,7 @@ var _export_success_dialog: AcceptDialog
 var _text_size_menu: PopupMenu
 var _ui_root: Control
 var _loaded_model: Node
+var _loaded_source := ""
 var _recent_files_menu: PopupMenu
 var _recent_files: Array[String] = []
 var _recent_file_paths_by_id: Dictionary = {}
@@ -280,16 +281,24 @@ func _install_model(model: Node, source: String) -> void:
 	_refresh_sidebar_docks()
 	camera.set_target(character.global_position + Vector3(0.0, 0.1, 0.0))
 	_loaded_model = model
+	_loaded_source = source
 	_remember_recent_file(source)
+
+
+func _default_export_basename() -> String:
+	var filename := _loaded_source.get_file().get_basename().validate_filename()
+	if filename.is_empty():
+		filename = String(_loaded_model.name).validate_filename()
+	if filename.is_empty():
+		filename = "model"
+	return filename
 
 
 func _open_scene_export_dialog() -> void:
 	if not is_instance_valid(_loaded_model):
 		_show_error("Load an FBX file before exporting its scene.")
 		return
-	var filename := String(_loaded_model.name).validate_filename()
-	if filename.is_empty():
-		filename = "model"
+	var filename := _default_export_basename()
 	if OS.has_feature("web"):
 		_export_scene_direct("%s.tscn" % filename)
 		return
@@ -301,7 +310,7 @@ func _open_object_export_dialog() -> void:
 	if not is_instance_valid(_loaded_model):
 		_show_error("Load an FBX file before exporting an object.")
 		return
-	_object_export_dialog.open_for_model(_loaded_model)
+	_object_export_dialog.open_for_model(_loaded_model, _default_export_basename())
 
 
 func _export_loaded_scene(path: String) -> void:

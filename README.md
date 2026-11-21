@@ -1,6 +1,6 @@
 # 3DChaD
 
-A Godot 4.7 desktop tool for loading, inspecting, and exporting external FBX models at runtime. It acts as a lightweight 3D model viewer with an animation editor and a repositionable panel workspace.
+A Godot 4.7 desktop and web tool for loading, inspecting, and exporting external FBX models at runtime. It acts as a lightweight 3D model viewer with an animation editor and a repositionable panel workspace.
 
 ## Features
 
@@ -10,15 +10,17 @@ A Godot 4.7 desktop tool for loading, inspecting, and exporting external FBX mod
 - **Animation editor** — lists clips, plays previews, and edits animation name, loop mode, and preview speed.
 - **Repositionable panels** — Left Sidebar, Right Sidebar, or Bottom Panel placement via a three-dot menu; empty docks hide, collapsed side panels shrink to an icon, and the layout persists.
 - **Scene export** — pack the loaded model (including `Skeleton3D`) into a reusable `.tscn` or `.scn`.
-- **Object export** — export any node subtree with per-node/per-bone renaming and case-sensitive bulk find/replace for bone names.
+- **Object export** — export any node subtree as a scene (`.tscn` / `.scn`) or as a single binary `.res` resource (mesh, `Skeleton3D`, and animations bundled), with per-node/per-bone renaming and case-sensitive bulk find/replace for bone names.
 - **Animation library export** — export clips to `.res` / `.tres` with track-path remapping, bulk path find/replace, and an optional track-root prefix; the source library is never modified.
 - **Recent files** — the last ten successfully loaded FBX paths, persisted across launches.
 - **Text size** — extra small / small / default / large UI font sizes, persisted across launches.
+- **Web builds** — the Web export loads FBX files through the browser's file picker and exports by triggering browser downloads (`JavaScriptBridge`); recent files are disabled there.
 
 ## Requirements
 
 - [Godot 4.7.2](https://godotengine.org/) (standard or .NET build). The executable path configured in `.vscode/settings.json` is workstation-specific; substitute your local path or use `godot` from `PATH`.
 - Windows build uses the **Mobile** renderer with **Jolt Physics** and the `d3d12` driver (see `project.godot`).
+- Web export requires the Godot 4.7.2 Web export templates; the build runs with the Compatibility (WebGL 2) renderer. Because threads are enabled, serve it with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` headers (e.g. a small Python static server).
 
 ## Running
 
@@ -37,18 +39,20 @@ godot --path .
 
 | Menu | Action |
 | --- | --- |
-| **File > Load .fbx** | Open an external FBX model. |
-| **File > Recent Files** | Reopen one of the last ten loaded models. |
+| **File > Load .fbx** | Open an external FBX model (browser file picker in Web builds). |
+| **File > Recent Files** | Reopen one of the last ten loaded models (disabled in Web builds). |
 | **File > Export Loaded Scene...** | Save the model as `.tscn` or `.scn`. |
-| **File > Export Object...** | Export a selected node subtree with renaming options. |
+| **File > Export Object...** | Export a selected node subtree; choose **Scene (.tscn)** or **Binary resource (.res)** in the dialog, with renaming options. |
 | **File > Export Library** (animation panel) | Save the selected clip's `AnimationLibrary` to `.res` or `.tres`. |
 | **View > Text Size** | Change the UI font size (persists across restarts). |
+
+In Web builds the export menu items skip the save dialog and download the file directly (named after the source FBX).
 
 ## Project structure
 
 ```
 project.godot          # Godot project config (entry scene, renderer, physics)
-export_presets.cfg     # Windows Desktop export preset
+export_presets.cfg     # Windows Desktop and Web export presets
 Scenes/
   main.tscn            # Entry scene: camera, light, floor, Character container
   main.gd              # Coordinates UI, file selection, model replacement, menus
@@ -59,7 +63,9 @@ Scripts/
   fbx_animation_editor_panel.gd# Animation clip list, playback, and editing
   fbx_scene_loader.gd          # Runtime FBX parsing
   fbx_scene_exporter.gd        # Packs the model into a PackedScene
-  fbx_object_export_dialog.gd  # Subtree export with renaming/bulk replace
+  resource_file_saver.gd       # Saves to disk or downloads in Web builds
+  web_file_picker.gd           # Browser file picker for Web builds
+  fbx_object_export_dialog.gd  # Subtree export (scene or .res) with renaming/bulk replace
   animation_library_export_dialog.gd # AnimationLibrary export UI
 assets/models/         # Sample models and exported resources
 agent.md               # Architecture, design rules, and validation workflow for AI agents

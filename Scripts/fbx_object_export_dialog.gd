@@ -13,8 +13,10 @@ var _bone_replace_edit: LineEdit
 var _bone_replace_button: Button
 var _bone_bulk_status: Label
 var _file_dialog: FileDialog
+var _format_option: OptionButton
 var _error_dialog: AcceptDialog
 var _success_dialog: AcceptDialog
+var _default_basename := ""
 
 
 func setup(workspace: Control, exporter: FbxSceneExporter) -> void:
@@ -89,6 +91,17 @@ func setup(workspace: Control, exporter: FbxSceneExporter) -> void:
 	_bone_names_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	bone_page.add_child(_bone_names_tree)
 
+	var format_row := HBoxContainer.new()
+	layout.add_child(format_row)
+	var format_label := Label.new()
+	format_label.text = "Export as:"
+	format_row.add_child(format_label)
+	_format_option = OptionButton.new()
+	_format_option.add_item("Scene (.tscn)")
+	_format_option.add_item("Binary resource (.res)")
+	_format_option.item_selected.connect(_on_format_selected)
+	format_row.add_child(_format_option)
+
 	var buttons := HBoxContainer.new()
 	layout.add_child(buttons)
 	var export_button := Button.new()
@@ -103,8 +116,7 @@ func setup(workspace: Control, exporter: FbxSceneExporter) -> void:
 	_file_dialog = FileDialog.new()
 	_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	_file_dialog.add_filter("*.tscn ; Text Scene")
-	_file_dialog.add_filter("*.scn ; Binary Scene")
+	_apply_file_dialog_filters()
 	_file_dialog.file_selected.connect(_save_export)
 	workspace.add_child(_file_dialog)
 
@@ -124,11 +136,12 @@ func apply_ui_theme(theme: Theme) -> void:
 	_success_dialog.theme = theme
 
 
-func open_for_model(model: Node) -> void:
+func open_for_model(model: Node, default_basename: String = "") -> void:
 	if not is_instance_valid(model):
 		_show_error("The loaded model is no longer available.")
 		return
 	_model_root = model
+	_default_basename = default_basename
 	_selected_root = null
 	_populate_source_tree()
 
@@ -347,13 +360,37 @@ func _open_file_dialog() -> void:
 		_show_error("Select an object to export.")
 		return
 	var filename := String(_selected_root.name).validate_filename()
+	if filename.is_empty() or filename.begins_with("@"):
+		filename = _default_basename
 	if filename.is_empty():
 		filename = "object"
+	var extension := _selected_extension()
 	if OS.has_feature("web"):
-		_save_export("%s.tscn" % filename)
+		_save_export("%s.%s" % [filename, extension])
 		return
-	_file_dialog.current_file = "%s.tscn" % filename
+	_apply_file_dialog_filters()
+	_file_dialog.current_file = "%s.%s" % [filename, extension]
 	_file_dialog.popup_centered_ratio()
+
+
+func _selected_extension() -> String:
+	return "res" if _format_option.selected == 1 else "tscn"
+
+
+func _on_format_selected(_index: int) -> void:
+	_apply_file_dialog_filters()
+
+
+func _apply_file_dialog_filters() -> void:
+	if _file_dialog == null:
+		return
+	if _selected_extension() == "res":
+		_file_dialog.filters = PackedStringArray(["*.res ; Binary Resource"])
+		return
+	_file_dialog.filters = PackedStringArray([
+		"*.tscn ; Text Scene",
+		"*.scn ; Binary Scene",
+	])
 
 
 func _save_export(path: String) -> void:
@@ -366,10 +403,10 @@ func _save_export(path: String) -> void:
 
 	var extension := path.get_extension().to_lower()
 	if extension.is_empty():
-		path += ".tscn"
-		extension = "tscn"
-	if extension != "tscn" and extension != "scn":
-		_show_error("Choose a .tscn or .scn file extension.")
+		extension = _selected_extension()
+		path += ".%s" % extension
+	if not ["tscn", "scn", "res"].has(extension):
+		_show_error("Choose a .tscn, .scn, or .res file extension.")
 		return
 	if path.get_extension() != extension:
 		path = "%s.%s" % [path.get_basename(), extension]
