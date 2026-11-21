@@ -17,6 +17,8 @@ script = ExtResource("2_camera")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1484798206]
 transform = Transform3D(1, 0, 0, 0, 0.73136854, 0.68198246, 0, -0.68198246, 0.73136854, 0, 2.457531, 2.3357034)
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
 [node name="floor" type="MeshInstance3D" parent="." unique_id=223721943]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
 mesh = SubResource("PlaneMesh_d5mrg")

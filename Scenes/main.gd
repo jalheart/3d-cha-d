@@ -11,11 +11,15 @@ const FONT_SIZE_LARGE := 18
 
 @onready var camera: OrbitCameraController = $Camera3D
 @onready var character: Node3D = $Character
+@onready var _floor_mesh: MeshInstance3D = $floor
+@onready var _world_environment: WorldEnvironment = $WorldEnvironment
 
 var _fbx_loader: FbxSceneLoader
 var _fbx_exporter: FbxSceneExporter
+var _environment_controller: ViewEnvironmentController
 var _inspector_panel: FbxInspectorPanel
 var _animation_panel: FbxAnimationEditorPanel
+var _environment_panel: EnvironmentPanel
 var _sidebar_docks: Dictionary = {}
 var _file_dialog: FileDialog
 var _web_file_picker: WebFilePicker
@@ -38,7 +42,12 @@ func _ready() -> void:
 	_fbx_loader.load_failed.connect(_show_error)
 	_fbx_exporter = FbxSceneExporter.new()
 	_fbx_exporter.export_failed.connect(_show_error)
+	_environment_controller = ViewEnvironmentController.new(
+		_floor_mesh,
+		_world_environment
+	)
 	_create_runtime_ui()
+	_environment_controller.settings_failed.connect(_show_error)
 	_load_recent_files()
 	_load_ui_settings()
 	_apply_ui_theme()
@@ -81,6 +90,17 @@ func _create_runtime_ui() -> void:
 	_animation_panel.location_changed.connect(
 		_on_sidebar_panel_location_changed.bind(_animation_panel)
 	)
+
+	_environment_panel = EnvironmentPanel.new()
+	_environment_panel.setup()
+	_sidebar_docks[SidebarPanel.Location.LEFT_SIDEBAR].add_child(_environment_panel)
+	_environment_panel.location_changed.connect(
+		_on_sidebar_panel_location_changed.bind(_environment_panel)
+	)
+	_environment_panel.settings_changed.connect(_on_environment_settings_changed)
+	_environment_panel.settings_committed.connect(_on_environment_settings_committed)
+	_environment_panel.apply_settings(_environment_controller.get_settings())
+
 	_refresh_sidebar_docks()
 	_object_export_dialog = FbxObjectExportDialog.new()
 	_object_export_dialog.setup(workspace, _fbx_exporter)
@@ -269,11 +289,21 @@ func _load_fbx(path: String) -> void:
 	_install_model(model, path)
 
 
+func _strip_unwanted_nodes(node: Node) -> void:
+	var unwanted_types = ["WorldEnvironment", "Camera3D", "DirectionalLight3D", "OmniLight3D", "SpotLight3D"]
+	for child in node.get_children():
+		_strip_unwanted_nodes(child)
+		if child.get_class() in unwanted_types:
+			node.remove_child(child)
+			child.queue_free()
+
+
 func _install_model(model: Node, source: String) -> void:
 	_animation_panel.stop_playback()
 	for child in character.get_children():
 		character.remove_child(child)
 		child.queue_free()
+	_strip_unwanted_nodes(model)
 	character.add_child(model)
 
 	var animation_count := _animation_panel.set_model(model)
@@ -396,6 +426,51 @@ func _load_ui_settings() -> void:
 		config.get_value("ui", "animation_location", SidebarPanel.Location.LEFT_SIDEBAR),
 		"Animation Editor"
 	)
+	_load_panel_location(
+		_environment_panel,
+		config.get_value("ui", "environment_location", SidebarPanel.Location.LEFT_SIDEBAR),
+		"Environment"
+	)
+	_load_environment_settings(config)
+
+
+func _load_environment_settings(config: ConfigFile) -> void:
+	var defaults := _environment_controller.get_settings()
+	_environment_controller.apply_settings(
+		{
+			"floor_visible": config.get_value(
+				"environment",
+				"floor_visible",
+				defaults["floor_visible"]
+			),
+			"floor_color": config.get_value(
+				"environment",
+				"floor_color",
+				defaults["floor_color"]
+			),
+			"floor_size": config.get_value(
+				"environment",
+				"floor_size",
+				defaults["floor_size"]
+			),
+			"background_color": config.get_value(
+				"environment",
+				"background_color",
+				defaults["background_color"]
+			),
+			"ambient_color": config.get_value(
+				"environment",
+				"ambient_color",
+				defaults["ambient_color"]
+			),
+			"ambient_energy": config.get_value(
+				"environment",
+				"ambient_energy",
+				defaults["ambient_energy"]
+			)
+		}
+	)
+	_environment_panel.apply_settings(_environment_controller.get_settings())
 
 
 func _load_panel_location(panel: SidebarPanel, stored_location: Variant, panel_title: String) -> void:
@@ -413,6 +488,18 @@ func _save_ui_settings() -> void:
 	config.set_value("ui", "font_size", _ui_font_size)
 	config.set_value("ui", "inspector_location", _inspector_panel.location)
 	config.set_value("ui", "animation_location", _animation_panel.location)
+	config.set_value("ui", "environment_location", _environment_panel.location)
+	var environment := _environment_controller.get_settings()
+	config.set_value("environment", "floor_visible", environment["floor_visible"])
+	config.set_value("environment", "floor_color", environment["floor_color"])
+	config.set_value("environment", "floor_size", environment["floor_size"])
+	config.set_value(
+		"environment",
+		"background_color",
+		environment["background_color"]
+	)
+	config.set_value("environment", "ambient_color", environment["ambient_color"])
+	config.set_value("environment", "ambient_energy", environment["ambient_energy"])
 	var error := config.save(UI_SETTINGS_CONFIG_PATH)
 	if error != OK:
 		_show_error("Could not save UI settings: %s" % error_string(error))
@@ -441,6 +528,16 @@ func _apply_ui_theme() -> void:
 	_export_success_dialog.theme = theme
 	_object_export_dialog.apply_ui_theme(theme)
 	_animation_panel.apply_ui_theme(theme)
+	_environment_panel.apply_ui_theme(theme)
+
+
+func _on_environment_settings_changed(settings: Dictionary) -> void:
+	_environment_controller.apply_settings(settings)
+
+
+func _on_environment_settings_committed(settings: Dictionary) -> void:
+	if _environment_controller.apply_settings(settings):
+		_save_ui_settings()
 
 
 func _update_text_size_menu() -> void:

@@ -3,7 +3,8 @@
 ## Project architecture
 
 - This is a Godot 4.7 project. `project.godot` selects `Scenes/main.tscn` as the entry scene and configures the Mobile renderer and Jolt physics.
-- `Scenes/main.tscn` defines the 3D viewer. Its `Main` node owns the `Camera3D`, light, floor, and `Character` model container; `Scenes/main.gd` coordinates file selection and model replacement.
+- `Scenes/main.tscn` defines the 3D viewer. Its `Main` node owns the `Camera3D`, light, `floor` mesh, `WorldEnvironment`, and `Character` model container; `Scenes/main.gd` coordinates file selection and model replacement.
+- `Scripts/view_environment_controller.gd` applies floor visibility, color, and size plus background and ambient-light settings to the `floor` mesh and `WorldEnvironment`. `Scripts/environment_panel.gd` exposes those controls as a dockable Environment panel; values apply live and persist in `user://ui_settings.cfg`.
 - `Scripts/orbit_camera_controller.gd`, attached to `Camera3D`, owns orbit, pan, zoom, and target positioning.
 - `Scripts/sidebar_panel.gd` provides non-draggable, collapsible panels with a three-dot menu for Left Sidebar, Right Sidebar, or Bottom Panel placement. Panels assigned to the same location stack, and their locations persist in `user://ui_settings.cfg`. Empty docks are hidden and mouse-transparent. Collapsed side panels shrink to a compact icon-and-menu control; the Bottom Panel keeps its full title and width. `Scripts/fbx_inspector_panel.gd` presents model properties, while `Scripts/fbx_animation_editor_panel.gd` lists, plays, and edits animation clips.
 - `Scripts/fbx_scene_loader.gd` parses external FBX files at runtime with `FBXDocument.append_from_file()` and `generate_scene()`, and signals failures to the coordinator. Do not rely on `ResourceLoader` or the editor import cache for arbitrary external FBX paths.
@@ -47,7 +48,7 @@ For the manual check, use **View > Text Size** to change the font size and verif
 ## Repository conventions
 
 - Keep the scene node names `Camera3D` and `Character` synchronized with the `$Camera3D` and `$Character` references in `Scenes/main.gd`.
-- Keep each concern in its corresponding script: orchestration in `main.gd`, camera behavior in `orbit_camera_controller.gd`, sidebar behavior in `sidebar_panel.gd`, parsing in `fbx_scene_loader.gd`, model export in `fbx_scene_exporter.gd`, platform save/download handling in `resource_file_saver.gd`, browser file picking in `web_file_picker.gd`, object export UI in `fbx_object_export_dialog.gd`, and panel-specific behavior in the inspector and animation editor scripts.
+- Keep each concern in its corresponding script: orchestration in `main.gd`, camera behavior in `orbit_camera_controller.gd`, sidebar behavior in `sidebar_panel.gd`, floor/environment application in `view_environment_controller.gd`, environment UI in `environment_panel.gd`, parsing in `fbx_scene_loader.gd`, model export in `fbx_scene_exporter.gd`, platform save/download handling in `resource_file_saver.gd`, browser file picking in `web_file_picker.gd`, object export UI in `fbx_object_export_dialog.gd`, and panel-specific behavior in the inspector and animation editor scripts.
 - Runtime UI is assembled in GDScript rather than separate `.tscn` files. Connect controls to focused signal handlers and derive inspector data from the loaded scene tree.
 - Use Godot 4 APIs and typed GDScript. Source files use UTF-8 and tab indentation.
 - Report load and parse failures with `push_error()` and the existing `AcceptDialog` pattern instead of silently ignoring them.

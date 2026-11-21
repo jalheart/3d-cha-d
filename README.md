@@ -14,6 +14,7 @@ A Godot 4.7 desktop and web tool for loading, inspecting, and exporting external
 - **Animation library export** — export clips to `.res` / `.tres` with track-path remapping, bulk path find/replace, and an optional track-root prefix; the source library is never modified.
 - **Recent files** — the last ten successfully loaded FBX paths, persisted across launches.
 - **Text size** — extra small / small / default / large UI font sizes, persisted across launches.
+- **Environment panel** — show or hide the floor, set its color and size, and adjust the background color and ambient light; changes apply live and persist across launches.
 - **Web builds** — the Web export loads FBX files through the browser's file picker and exports by triggering browser downloads (`JavaScriptBridge`); recent files are disabled there.
 
 ## Requirements
@@ -45,6 +46,7 @@ godot --path .
 | **File > Export Object...** | Export a selected node subtree; choose **Scene (.tscn)** or **Binary resource (.res)** in the dialog, with renaming options. |
 | **File > Export Library** (animation panel) | Save the selected clip's `AnimationLibrary` to `.res` or `.tres`. |
 | **View > Text Size** | Change the UI font size (persists across restarts). |
+| **Environment panel** | Toggle the floor, change floor color/size, and set the background and ambient light (persists across restarts). |
 
 In Web builds the export menu items skip the save dialog and download the file directly (named after the source FBX).
 
@@ -54,11 +56,13 @@ In Web builds the export menu items skip the save dialog and download the file d
 project.godot          # Godot project config (entry scene, renderer, physics)
 export_presets.cfg     # Windows Desktop and Web export presets
 Scenes/
-  main.tscn            # Entry scene: camera, light, floor, Character container
+  main.tscn            # Entry scene: camera, light, floor, WorldEnvironment, Character container
   main.gd              # Coordinates UI, file selection, model replacement, menus
 Scripts/
   orbit_camera_controller.gd   # Orbit / pan / zoom camera control
   sidebar_panel.gd             # Collapsible, repositionable dock panels
+  environment_panel.gd         # Floor and ambient environment controls
+  view_environment_controller.gd # Applies floor/environment settings to the scene
   fbx_inspector_panel.gd       # Model property inspector
   fbx_animation_editor_panel.gd# Animation clip list, playback, and editing
   fbx_scene_loader.gd          # Runtime FBX parsing
